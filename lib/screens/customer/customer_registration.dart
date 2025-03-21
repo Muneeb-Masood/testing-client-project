@@ -489,18 +489,18 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                   });
                   final storageRef = storage
                       .child('${widget.userData.email}/profileImage.png');
-                  final uploadTask = await storageRef.putFile(File(file.path));
-                  final downloadUrl = await uploadTask.ref.getDownloadURL();
-                  FirebaseAuth.instance.currentUser
-                      ?.updatePhotoURL(downloadUrl)
-                      .then((value) => print("Photo url updated."));
-                  if (mounted) {
-                    setState(() {
-                      profileImageUrl = downloadUrl;
-                      taskSuccessful = true;
-                      isUploadingProfileImage = false;
-                    });
-                  }
+                  // final uploadTask = await storageRef.putFile(File(file.path));
+                  // final downloadUrl = await uploadTask.ref.getDownloadURL();
+                  // FirebaseAuth.instance.currentUser
+                  //     ?.updatePhotoURL(downloadUrl)
+                  //     .then((value) => print("Photo url updated."));
+                  // if (mounted) {
+                  //   setState(() {
+                  //     profileImageUrl = downloadUrl;
+                  //     taskSuccessful = true;
+                  //     isUploadingProfileImage = false;
+                  //   });
+                  // }
                 }
               },
       ),
@@ -515,8 +515,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
           setState(() {
             isNextBtnPressed = true;
             if (formKey.currentState!.validate() &&
-                gender != null &&
-                !isUploadingProfileImage) {
+                gender != null) {
               // if (profileImageUrl == null ||
               //     profileImageUrl == initialImageUrl) {
               //   showMyDialog(
@@ -529,7 +528,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
               // }
               print("Validation successful");
               customer = Customer(
-                location: location!,
+                location: location == null ? UserLocation(longitude: 44.6, latitude: 44.7) : location!,
                 city: capitalizeText(cityController.text.trim()),
                 name: capitalizeText(nameController.text.trim()),
                 email: widget.userData.email,

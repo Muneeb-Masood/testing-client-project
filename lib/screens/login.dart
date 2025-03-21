@@ -103,7 +103,7 @@ class _LoginState extends State<Login> {
                             style: kTitleStyle.copyWith(color: kOrangeColor),
                           ).tr(),
                           Align(
-                            alignment: Alignment.center,
+                            alignment: Alignment.topLeft,
                             child: Text(
                               'your dress on time.',
                               style: kTextStyle.copyWith(color: kOrangeColor),

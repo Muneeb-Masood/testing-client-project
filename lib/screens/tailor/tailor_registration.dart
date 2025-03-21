@@ -708,59 +708,113 @@ class _TailorRegistrationState extends State<TailorRegistration> {
   }
 
   RectangularRoundedButton buildNextButton() {
-    return RectangularRoundedButton(
-      buttonName: 'Next',
-      onPressed: () async {
+  return RectangularRoundedButton(
+    buttonName: 'Register',
+    onPressed: () async {
+      bool taskSuccessful = false;
+      if (mounted) {
         setState(() {
-          isNextBtnPressed = true;
-          if (formKey.currentState!.validate() &&
-              gender != null &&
-              stitchingType != null &&
-              selectedExpertise.isNotEmpty) {
-            if (profileImageUrl == null ||
-                profileImageUrl == initialImageUrl && location != null) {
-              showMyDialog(
-                  context,
-                  'Error!',
-                  getTranslatedText(
-                      "پروفائل تصویر شامل کریں", "add a profile picture."),
-                  disposeAfterMillis: 1500);
-              return;
+          isRegisterBtnPressed = true;
+        });
+      }
+      if (formKey.currentState!.validate()) {
+        if (mounted) {
+          setState(() {
+            isRegisterBtnPressed = true;
+            isSavingDataInFirebase = true;
+          });
+        }
+        // Timeout logic
+        Future.delayed(const Duration(seconds: 60, milliseconds: 2000))
+            .then((value) {
+          if (mounted) {
+            setState(() => isSavingDataInFirebase = false);
+            if (!taskSuccessful) {
+              showMyBanner(
+                  context, getTranslatedText("ٹائم آؤٹ.", "Timed out."));
             }
-            print("Validation successful");
-            if (location == null) {
-              showMyDialog(
-                  context,
-                  'Error!',
-                  getTranslatedText(
-                      "براہ کرم سیٹنگس میں جائیں اور لوکیشن کی اجازت دیں۔",
-                      "please go to settings and give location permission."),
-                  disposeAfterMillis: 3000);
-              return;
-            }
-            tailor = Tailor(
-              location: location!,
-              tailorName: capitalizeText(nameController.text.trim()),
-              email: widget.userData.email,
-              userDocId: widget.userData.id,
-              gender: gender!,
-              stitchingType: stitchingType!,
-              expertise: selectedExpertise,
-              phoneNumber: phoneNumber,
-              profileImageUrl: profileImageUrl,
-              customizes: customizesDresses,
-              rates: expertiseRatesList,
-              experience: int.parse(experienceController.text.trim()),
-            );
-            widget.userData.name = capitalizeText(nameController.text.trim());
-            print("Rates: $expertiseRatesList");
-            isNextBtnPressed = false;
           }
         });
-      },
-    );
-  }
-
+        // Create Shop object
+        Shop shop = Shop(
+          viaAgentCharges: viaAgentCharges,
+          address: shopAddressController.text.trim(),
+          city: capitalizeText(cityController.text.trim()),
+          name: capitalizeText(shopNameController.text.trim()),
+          postalCode: int.parse(postalCodeController.text.trim()),
+          shopImage1Url: shopImagesList[0],
+          shopImage2Url: shopImagesList[1],
+        );
+        tailor!.shop = shop;
+        try {
+          await FirebaseFirestore.instance
+              .collection('tailors')
+              .add(tailor!.toJson())
+              .then((doc) {
+            tailor!.id = doc.id;
+            tailor!.userDocId = widget.userData.id;
+            FirebaseAuth.instance.currentUser!
+                .updateDisplayName(widget.userData.name)
+                .then((value) => print('Display name updated.'));
+            FirebaseAuth.instance.currentUser!
+                .updatePhotoURL(tailor!.profileImageUrl)
+                .then((value) => print('Display photo url updated.'));
+            doc.update(tailor!.toJson()).then((value) {
+              widget.userData.isRegistered = true;
+              widget.userData.isTailor = true;
+              widget.userData.customerOrTailorId = doc.id;
+              if (mounted) {
+                setState(() {
+                  taskSuccessful = true;
+                });
+              }
+              FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(widget.userData.id)
+                  .update(widget.userData.toJson());
+              print("tailor's user Data updated");
+            }).then((value) {
+              if (taskSuccessful) {
+                if (widget.fromScreen == Login.id) {
+                  Future.delayed(const Duration(milliseconds: 20)).then(
+                      (value) => Navigator.pushReplacementNamed(
+                          context, TailorMainScreen.id));
+                } else {
+                  FirebaseAuth.instance
+                      .signOut()
+                      .then((value) => SharedPreferences.getInstance().then(
+                          (pref) =>
+                              pref.setBool(Login.isLoggedInText, false)))
+                      .then((value) {
+                    if (mounted) {
+                      setState(() {
+                        isRegisterBtnPressed = false;
+                        isSavingDataInFirebase = false;
+                      });
+                    }
+                    showMyDialog(
+                        context,
+                        'Success',
+                        getTranslatedText("درزی رجسٹریشن کامیاب ہوئ.",
+                            'Tailor registration successful.'),
+                        isError: false,
+                        disposeAfterMillis: 1200)
+                        .then((value) =>   Navigator.push(context, MaterialPageRoute(builder: (context) => TailorMainScreen())));
+                  });
+                }
+              }
+            });
+          });
+          
+        } catch (e) {
+          print('Exception while saving: $e');
+        }
+        onClearButtonPressed();
+        print('Tailor data: ${tailor!.toJson().toString()}');
+      }
+    },
+  );
+}
   Container buildPhoneNumberVerificationPage(Size size) {
     return Container(
       margin: EdgeInsets.only(top: size.height * 0.2),

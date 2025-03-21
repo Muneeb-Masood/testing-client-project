@@ -196,7 +196,7 @@ class _CustomerMainScreenState extends State<CustomerMainScreen> {
                     });
                   }
                   return index == 0
-                      ? const CustomerHomeView()
+                      ? const SearchTailor()
                       : index == 1
                           ? const SearchTailor()
                           // : index == 2
@@ -224,7 +224,7 @@ class _CustomerMainScreenState extends State<CustomerMainScreen> {
           leftCornerRadius: 32,
           rightCornerRadius: 32,
           onTap: (index) => setState(() {
-            if (index == this.index) return;
+            if (index == 0) return;
             this.index = index;
           }),
           //other params
